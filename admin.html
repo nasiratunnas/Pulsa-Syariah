@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulsaSyariah - Dashboard Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="admin-body">
+
+    <!-- Header Navigation -->
+    <header class="main-header admin-theme">
+        <div class="header-container">
+            <div class="logo-area">
+                <i class="fa-solid fa-mosque logo-icon text-amber"></i>
+                <div class="logo-text">
+                    <h1>PulsaSyariah</h1>
+                    <p>Internal Management System</p>
+                </div>
+            </div>
+            <div class="badge-role admin-badge">
+                <i class="fa-solid fa-user-shield"></i> Portal Admin
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Informasi Tim -->
+        <div class="team-info-bar">
+            <div class="team-meta">
+                <h3>Tim Pengembang Perencanaan Bisnis</h3>
+                <p>Nasiratunnas (60200123013) | Andi Baso Djidan Hasri (60200123091) | Muhammad Haikal (60200123062)</p>
+            </div>
+            <div class="syariah-note">
+                Sisi Syariah: <span class="highlight-green">Transparansi Keuangan Tim Intern</span>
+            </div>
+        </div>
+
+        <!-- Widgets Ringkasan Keuangan -->
+        <div class="widgets-grid">
+            <div class="widget-card bg-white border-left-emerald">
+                <div class="widget-icon icon-emerald"><i class="fa-solid fa-wallet"></i></div>
+                <div class="widget-data">
+                    <p class="widget-label">Saldo Dompet Bisnis</p>
+                    <p class="widget-val" id="adminProfitWallet">Rp0</p>
+                </div>
+            </div>
+            
+            <div class="widget-card bg-white border-left-amber">
+                <div class="widget-icon icon-amber"><i class="fa-solid fa-piggy-bank"></i></div>
+                <div class="widget-data">
+                    <p class="widget-label">Dana Wadiah (Titipan Cust)</p>
+                    <p class="widget-val" id="adminWadiahWallet">Rp0</p>
+                </div>
+            </div>
+
+            <div class="widget-card bg-white border-left-sky">
+                <div class="widget-icon icon-sky"><i class="fa-solid fa-server"></i></div>
+                <div class="widget-data">
+                    <p class="widget-label">Stok Deposit Supplier API</p>
+                    <p class="widget-val">Rp500.000</p>
+                </div>
+            </div>
+
+            <div class="widget-card bg-white border-left-purple">
+                <div class="widget-icon icon-purple"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="widget-data">
+                    <p class="widget-label">Total Transaksi Sukses</p>
+                    <p class="widget-val" id="adminTotalSuccess">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring Database -->
+        <div class="card db-card">
+            <div class="db-header">
+                <h3><i class="fa-solid fa-database"></i> Real-time Monitoring Database (MySQL Log)</h3>
+                <button onclick="refreshData()" class="btn-refresh"><i class="fa-solid fa-rotate"></i> Perbarui Data</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="db-table">
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Invoice</th>
+                            <th>Nama/No HP</th>
+                            <th>Produk</th>
+                            <th>Modal</th>
+                            <th>Harga Jual</th>
+                            <th>Status Sistem</th>
+                            <th class="center">Aksi / Simulasi API</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dbTableBody">
+                        <tr>
+                            <td colspan="8" class="center text-muted">Belum ada transaksi terekam di database. Silakan lakukan pemesanan di customer.html</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <p>&copy; 2026 pulsasyariah - SyariaTech PPOB Hub. Dashboard Admin Intern.</p>
+    </footer>
+
+    <script>
+        let profitWallet = 0;
+        let wadiahWallet = 0;
+        let successCount = 0;
+
+        function refreshData() {
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('dbTableBody');
+            let logs = JSON.parse(localStorage.getItem('dbLogs')) || [];
+            
+            // Cek jika ada transaksi baru pending dari customer yang belum masuk ke dbLogs global
+            let currentTx = JSON.parse(localStorage.getItem('currentTx'));
+            if(currentTx && !logs.some(l => l.id === currentTx.id)) {
+                logs.unshift(currentTx);
+                localStorage.setItem('dbLogs', JSON.stringify(logs));
+            }
+
+            if(logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="center text-muted">Belum ada transaksi terekam di database. Silakan lakukan pemesanan di customer.html</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            logs.forEach((tx, index) => {
+                let statusClass = "badge-warning";
+                if(tx.status.includes("SUKSES")) statusClass = "badge-success";
+                if(tx.status.includes("GAGAL")) statusClass = "badge-danger";
+                if(tx.status.includes("Proses")) statusClass = "badge-info";
+
+                let actionButtons = `<span class="text-muted italic">Selesai</span>`;
+                if(tx.status === "Sudah Bayar (Proses Kirim API)") {
+                    actionButtons = `
+                        <div class="action-flex">
+                            <button onclick="triggerApiSuccess(${index})" class="btn-action btn-action-success">
+                                <i class="fa-solid fa-check"></i> Sukses
+                            </button>
+                            <button onclick="triggerApiRefund(${index})" class="btn-action btn-action-danger">
+                                <i class="fa-solid fa-rotate-left"></i> Gagal (Refund)
+                            </button>
+                        </div>
+                    `;
+                } else if(tx.status.includes("Pending")) {
+                    actionButtons = `<span class="text-muted">Menunggu Cust Bayar</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${tx.time}</td>
+                    <td class="font-mono font-bold">#${tx.id}</td>
+                    <td>${tx.customer}</td>
+                    <td><span class="badge-prod">${tx.product}</span></td>
+                    <td>Rp${tx.modal.toLocaleString('id-ID')}</td>
+                    <td class="font-bold">Rp${tx.total.toLocaleString('id-ID')}</td>
+                    <td><span class="badge ${statusClass}">${tx.status}</span></td>
+                    <td class="center">${actionButtons}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Recalculate wallets based on states
+            wadiahWallet = 0;
+            logs.forEach(tx => {
+                if(tx.status === "Sudah Bayar (Proses Kirim API)") {
+                    wadiahWallet += tx.total; // Dianggap dana wadiah (titipan) sebelum barang sampai
+                }
+            });
+            document.getElementById('adminWadiahWallet').innerText = "Rp" + wadiahWallet.toLocaleString('id-ID');
+        }
+
+        function triggerApiSuccess(index) {
+            let logs = JSON.parse(localStorage.getItem('dbLogs'));
+            let tx = logs[index];
+            
+            tx.status = "SUKSES (Selesai)";
+            successCount++;
+            profitWallet += tx.profit;
+
+            localStorage.setItem('dbLogs', JSON.stringify(logs));
+            
+            // Update UI & LocalStorage currentTx agar sisi user ikut ter-update jika di-refresh
+            localStorage.setItem('currentTx', JSON.stringify(tx));
+
+            document.getElementById('adminProfitWallet').innerText = "Rp" + profitWallet.toLocaleString('id-ID');
+            document.getElementById('adminTotalSuccess').innerText = successCount;
+            
+            renderTable();
+            alert("Transaksi berhasil diselesaikan! Keuntungan ditambahkan ke Dompet Bisnis secara amanah.");
+        }
+
+        function triggerApiRefund(index) {
+            let logs = JSON.parse(localStorage.getItem('dbLogs'));
+            let tx = logs[index];
+            
+            tx.status = "GAGAL (Uang Direfund)";
+            localStorage.setItem('dbLogs', JSON.stringify(logs));
+            localStorage.setItem('currentTx', JSON.stringify(tx));
+
+            renderTable();
+            alert("Server API Supplier gangguan! Dana otomatis dikembalikan (Refund) utuh kepada customer untuk menghindari Gharar.");
+        }
+
+        // Jalankan render pertama kali saat dibuka
+        window.onload = renderTable;
+    </script>
+</body>
+</html>
