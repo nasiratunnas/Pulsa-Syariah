@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulsaSyariah - Portal Pelanggan</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="customer-body">
+
+    <header class="main-header customer-theme">
+        <div class="header-container">
+            <div class="logo-area">
+                <i class="fa-solid fa-mosque logo-icon"></i>
+                <div class="logo-text">
+                    <h1>PulsaSyariah</h1>
+                    <p>SyariaTech PPOB Hub</p>
+                </div>
+            </div>
+            <div class="badge-role">
+                <i class="fa-solid fa-user"></i> Portal Pelanggan
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="hero-banner customer-grad">
+            <h2>Transaksi Cepat, Akad Jelas, Bisnis Berkah ✨</h2>
+            <p>Selamat datang di SyariaTech PPOB Hub. Layanan pengisian pulsa dan token berbasis syariah demi menghindari Gharar dan Riba dalam setiap aspek transaksi Anda.</p>
+        </div>
+
+        <div class="grid-container">
+            <div class="card panel-form">
+                <div class="card-header border-amber">
+                    <div class="status-indicator live"></div>
+                    <h3><i class="fa-solid fa-robot"></i> Masukkan (WA/Telegram)</h3>
+                </div>
+                
+                <form id="orderForm" onsubmit="processOrder(event)">
+                    <div class="form-group">
+                        <label>Nomor HP / ID Pelanggan</label>
+                        <input type="number" id="phone" placeholder="0812xxx atau Nomor Meter PLN" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Pilih Kategori Layanan</label>
+                        <select id="category" onchange="updateProductDropdown()">
+                            <option value="pulsa">Pulsa Biasa</option>
+                            <option value="token">Token Listrik (PLN)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Pilih Nominal Produk</label>
+                        <select id="nominal" onchange="calculateMurabahah()">
+                            </select>
+                    </div>
+
+                    <div class="akad-box">
+                        <div class="akad-title">
+                            <i class="fa-solid fa-scale-balanced"></i> Transparansi Akad Murabahah
+                        </div>
+                        <div class="akad-row">
+                            <span>Harga Modal Supplier:</span>
+                            <span id="modalText">Rp0</span>
+                        </div>
+                        <div class="akad-row">
+                            <span>Biaya Jasa (Keuntungan):</span>
+                            <span id="jasaText">Rp0</span>
+                        </div>
+                        <div class="akad-total">
+                            <span>Total Harga Jual:</span>
+                            <span id="totalText">Rp0</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-customer">
+                        Kirim Pesanan via Bot <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div class="card panel-status">
+                <div class="card-header">
+                    <h3><i class="fa-solid fa-receipt"></i> Status Transaksi Terakhir (Anti-Gharar)</h3>
+                </div>
+                
+                <div id="customerStatusContainer" style="display: none;">
+                    <div class="invoice-box">
+                        <div class="invoice-info">
+                            <p class="inv-id">Invoice ID: <span id="invId">#---</span></p>
+                            <p class="inv-detail" id="invDetail">Mengambil data...</p>
+                            <p class="inv-akad" id="invAkad"><i class="fa-solid fa-check"></i> Terikat Akad Murabahah</p>
+                        </div>
+                        <div class="invoice-price">
+                            <p id="invTotal">Rp0</p>
+                            <span id="invStatusBadge" class="badge badge-warning">Menunggu Pembayaran</span>
+                        </div>
+                    </div>
+
+                    <div id="paymentArea" class="payment-box">
+                        <p>Silakan bayar menggunakan <strong>QRIS Syariah</strong> atau <strong>Transfer Bank Syariah</strong> (Pas tanpa bunga/denda dholim):</p>
+        
+                        <div class="qr-code-placeholder" style="height: auto; padding: 10px; background: white; margin-bottom: 12px;">
+                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=pulsasyariah-berkah" alt="QRIS Syariah" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+                        </div>
+
+                        <div class="info-transfer" style="background-color: #ffffff; border: 1px dashed #059669; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: left; font-size: 11px;">
+                             <p style="margin-bottom: 4px; font-weight: bold; color: #047857;"><i class="fa-solid fa-bank"></i> Pilihan Transfer Bank Syariah:</p>
+                             <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                 <span>Bank Syariah Indonesia (BSI):</span>
+                                 <span style="font-family: monospace; font-weight: bold;">7232478448</span>
+                             </div>
+                             <div style="display: flex; justify-content: space-between;">
+                                 <span>A.N. Pengelola:</span>
+                                 <span style="font-weight: 600;">Nasiratunnas (SyariaTech PPOB Hub)</span>
+                             </div>
+                        </div>
+
+                        <button type="button" onclick="simulatePayment()" class="btn btn-pay">
+                             Silahkan Bayar Sekarang (Rp <span id="payAmount">0</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <div id="customerPlaceholder" class="placeholder-empty">
+                    <i class="fa-solid fa-comments-dollar"></i>
+                    <p>Silakan lakukan simulasi pemesanan melalui Bot di sebelah kiri.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <p>&copy; 2026 pulsasyariah - SyariaTech PPOB Hub. Dibuat untuk Tugas Perencanaan Bisnis Technopreneurship Syariah.</p>
+    </footer>
+
+    <script>
+        // Database data produk yang dipisahkan berdasarkan kategori
+        const productData = {
+            pulsa: {
+                "10000": { name: "Pulsa Biasa 10k", modal: 10000, profit: 3000, total: 13000 },
+                "20000": { name: "Pulsa Biasa 20k", modal: 20000, profit: 3000, total: 23000 },
+                "50000": { name: "Pulsa Biasa 50k", modal: 50000, profit: 3000, total: 53000 }
+            },
+            token: {
+                "20000": { name: "Token PLN 20k", modal: 20000, profit: 3500, total: 23500 },
+                "50000": { name: "Token PLN 50k", modal: 50000, profit: 3500, total: 53500 },
+                "100000": { name: "Token PLN 100k", modal: 100000, profit: 4000, total: 104000 }
+            }
+        };
+
+        // Fungsi mengubah pilihan nominal secara dinamis saat kategori diganti
+        function updateProductDropdown() {
+            const category = document.getElementById('category').value;
+            const nominalSelect = document.getElementById('nominal');
+            const products = productData[category];
+            
+            nominalSelect.innerHTML = ""; // Bersihkan dropdown lama
+            
+            for (let key in products) {
+                let opt = document.createElement('option');
+                opt.value = key;
+                opt.innerText = products[key].name;
+                nominalSelect.appendChild(opt);
+            }
+            
+            calculateMurabahah(); // Hitung ulang rincian akadnya
+        }
+
+        // Menghitung & menampilkan transparansi margin keuntungan (Murabahah)
+        function calculateMurabahah() {
+            const category = document.getElementById('category').value;
+            const nominal = document.getElementById('nominal').value;
+            
+            if(!nominal) return;
+            
+            const data = productData[category][nominal];
+            document.getElementById('modalText').innerText = "Rp" + data.modal.toLocaleString('id-ID');
+            document.getElementById('jasaText').innerText = "Rp" + data.profit.toLocaleString('id-ID');
+            document.getElementById('totalText').innerText = "Rp" + data.total.toLocaleString('id-ID');
+        }
+
+        function processOrder(e) {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value;
+            const category = document.getElementById('category').value;
+            const nominal = document.getElementById('nominal').value;
+            const product = productData[category][nominal];
+            const invId = "INV" + Math.floor(1000 + Math.random() * 9000);
+
+            const newTx = {
+                time: new Date().toLocaleTimeString('id-ID'),
+                id: invId,
+                customer: "Pelanggan (" + phone + ")",
+                product: product.name,
+                modal: product.modal,
+                total: product.total,
+                profit: product.profit,
+                status: "Pending (Menunggu Bayar)"
+            };
+            localStorage.setItem('currentTx', JSON.stringify(newTx));
+
+            // Tampilkan panel status invoice
+            document.getElementById('customerPlaceholder').style.display = 'none';
+            document.getElementById('customerStatusContainer').style.display = 'block';
+            document.getElementById('paymentArea').style.display = 'block';
+            
+            document.getElementById('invId').innerText = "#" + invId;
+            document.getElementById('invDetail').innerText = product.name + " ➔ " + phone;
+            document.getElementById('invTotal').innerText = "Rp" + product.total.toLocaleString('id-ID');
+            document.getElementById('payAmount').innerText = product.total.toLocaleString('id-ID');
+            
+            const badge = document.getElementById('invStatusBadge');
+            badge.className = "badge badge-warning";
+            badge.innerText = "Menunggu Pembayaran";
+            
+            alert("Pesanan masuk via Bot! Data disinkronkan ke Dashboard.");
+        }
+
+        function simulatePayment() {
+            let tx = JSON.parse(localStorage.getItem('currentTx'));
+            if(!tx) return;
+
+            tx.status = "Sudah Bayar (Proses Kirim API)";
+            localStorage.setItem('currentTx', JSON.stringify(tx));
+
+            let logs = JSON.parse(localStorage.getItem('dbLogs')) || [];
+            logs.unshift(tx);
+            localStorage.setItem('dbLogs', JSON.stringify(logs));
+            
+            document.getElementById('paymentArea').style.display = 'none';
+            const badge = document.getElementById('invStatusBadge');
+            badge.className = "badge badge-info";
+            badge.innerText = "Memproses Pulsa/Token via API...";
+            
+            alert("Sistem mendeteksi dana masuk! Silakan buka file 'admin.html' untuk mengontrol transaksi ini.");
+        }
+
+        // Jalankan inisialisasi dropdown produk pertama kali saat halaman dimuat
+        window.onload = updateProductDropdown;
+    </script>
+</body>
+</html>
